@@ -1,0 +1,93 @@
+
+from collections import deque
+
+# Hàm kiểm tra trạng thái hợp lệ
+def hop_le(trang_thai):
+    nguoi, soi, de, bap_cai = trang_thai
+    if soi == de and nguoi != de:
+        return False
+    if de == bap_cai and nguoi != de:
+        return False
+    return True
+
+# Sinh trạng thái mới, ưu tiên bắp cải
+def sinh_trang_thai_moi_uu_tien_bap_cai(trang_thai):
+    nguoi, soi, de, bap_cai = trang_thai
+    ket_qua = []
+
+    # Ưu tiên: bắp cải -> dê -> sói -> đi một mình
+    lua_chon = []
+    if nguoi == bap_cai:
+        lua_chon.append('bắp cải')
+    if nguoi == de:
+        lua_chon.append('dê')
+    if nguoi == soi:
+        lua_chon.append('sói')
+    lua_chon.append(None)  # đi một mình cuối cùng
+
+    for doi_tuong in lua_chon:
+        nguoi_moi = 1 - nguoi
+        soi_moi, de_moi, bap_cai_moi = soi, de, bap_cai
+        if doi_tuong == 'sói':
+            soi_moi = 1 - soi
+        elif doi_tuong == 'dê':
+            de_moi = 1 - de
+        elif doi_tuong == 'bắp cải':
+            bap_cai_moi = 1 - bap_cai
+        trang_thai_moi = (nguoi_moi, soi_moi, de_moi, bap_cai_moi)
+        if hop_le(trang_thai_moi):
+            ket_qua.append((trang_thai_moi, doi_tuong))
+    return ket_qua
+
+# BFS ưu tiên bắp cải
+def bfs_uu_tien_bap_cai(bat_dau, ket_thuc):
+    hang_doi = deque()
+    hang_doi.append((bat_dau, [], []))
+    ket_qua = []
+    da_tham = set()
+
+    while hang_doi:
+        hien_tai, duong_di, hanh_dong = hang_doi.popleft()
+        if hien_tai == ket_thuc:
+            ket_qua.append((duong_di + [hien_tai], hanh_dong))
+            continue  # tìm thêm lời giải khác
+        for trang_thai_moi, doi_tuong in sinh_trang_thai_moi_uu_tien_bap_cai(hien_tai):
+            if trang_thai_moi not in duong_di:  # cho phép trạng thái xuất hiện nhiều lần ở nhánh khác
+                ten_hanh_dong = "Đi một mình" if doi_tuong is None else f"Đi cùng {doi_tuong}"
+                hang_doi.append((trang_thai_moi, duong_di + [hien_tai], hanh_dong + [ten_hanh_dong]))
+    return ket_qua
+# Hiển thị trạng thái hai bờ
+def in_ben(trang_thai):
+    ben_trai = []
+    ben_phai = []
+    ten = ['người lái đò', 'sói', 'dê', 'bắp cải']
+    for i in range(4):
+        if trang_thai[i] == 0:
+            ben_trai.append(ten[i])
+        else:
+            ben_phai.append(ten[i])
+    return ben_trai, ben_phai
+
+# --- CHẠY CHƯƠNG TRÌNH ---
+bat_dau = (0, 0, 0, 0)
+ket_thuc = (1, 1, 1, 1)
+cac_loi_giai = bfs_uu_tien_bap_cai(bat_dau, ket_thuc)
+if cac_loi_giai:
+    print(f"Tìm được {len(cac_loi_giai)} lời giải:\n")
+    for so, (loi_giai, hanh_dong) in enumerate(cac_loi_giai, 1):
+        print(f"--- Lời giải {so} ---")
+        for i in range(1, len(loi_giai)):
+            trang_thai_truoc = loi_giai[i - 1]
+            trang_thai_sau = loi_giai[i]
+            hanh_dong_text = hanh_dong[i - 1]
+            ben_trai, ben_phai = in_ben(trang_thai_truoc)
+            print(f"Bước {i}:")
+            print(f"\tBờ trái : {ben_trai}")
+            print(f"\tBờ phải: {ben_phai}")
+            print(f"\t Hành động: {trang_thai_truoc} --> {trang_thai_sau} -> {hanh_dong_text}\n")
+        print(f" Hoàn thành sau {len(loi_giai) - 1} bước.\n")
+else:
+    print("Không tìm thấy lời giải.")
+
+
+
